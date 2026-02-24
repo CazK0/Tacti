@@ -1,32 +1,63 @@
 import pandas as pd
-import numpy as np
 
 url = "https://www.football-data.co.uk/mmz4281/2324/E0.csv"
 df = pd.read_csv(url)
 
-columns_to_keep = ['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR']
-df = df[columns_to_keep]
-
 df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+df = df.sort_values(by='Date')
 
-df['HomePoints'] = np.where(df['FTR'] == 'H', 3, np.where(df['FTR'] == 'D', 1, 0))
-df['AwayPoints'] = np.where(df['FTR'] == 'A', 3, np.where(df['FTR'] == 'D', 1, 0))
 
-home_df = df[['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'HomePoints']].copy()
-home_df.columns = ['Date', 'Team', 'Opponent', 'GoalsScored', 'GoalsConceded', 'Points']
-home_df['Venue'] = 'Home'
+def get_form(team, date, data):
+    past_games = data[((data['HomeTeam'] == team) | (data['AwayTeam'] == team)) & (data['Date'] < date)].tail(3)
 
-away_df = df[['Date', 'AwayTeam', 'HomeTeam', 'FTAG', 'FTHG', 'AwayPoints']].copy()
-away_df.columns = ['Date', 'Team', 'Opponent', 'GoalsScored', 'GoalsConceded', 'Points']
-away_df['Venue'] = 'Away'
+    if len(past_games) == 0:
+        return 0, 0, 0
 
-team_history = pd.concat([home_df, away_df]).sort_values(by=['Team', 'Date'])
+    pts = 0
+    gs = 0
+    gc = 0
 
-team_history['FormPoints'] = team_history.groupby('Team')['Points'].transform(lambda x: x.shift(1).rolling(3, min_periods=1).sum())
-team_history['FormGoalsScored'] = team_history.groupby('Team')['GoalsScored'].transform(lambda x: x.shift(1).rolling(3, min_periods=1).mean())
-team_history['FormGoalsConceded'] = team_history.groupby('Team')['GoalsConceded'].transform(lambda x: x.shift(1).rolling(3, min_periods=1).mean())
+    for _, row in past_games.iterrows():
+        if row['HomeTeam'] == team:
+            if row['FTR'] == 'H':
+                pts += 3
+            elif row['FTR'] == 'D':
+                pts += 1
+            gs += row['FTHG']
+            gc += row['FTAG']
+        else:
+            if row['FTR'] == 'A':
+                pts += 3
+            elif row['FTR'] == 'D':
+                pts += 1
+            gs += row['FTAG']
+            gc += row['FTHG']
 
-team_history = team_history.dropna()
+    return pts, gs / len(past_games), gc / len(past_games)
 
-team_history.to_csv('team_features.csv', index=False)
-print("Data pipeline complete. Output saved to team_features.csv")
+
+h_pts, h_gs, h_gc = [], [], []
+a_pts, a_gs, a_gc = [], [], []
+
+for index, row in df.iterrows():
+    hp, hg, hgc = get_form(row['HomeTeam'], row['Date'], df)
+    ap, ag, agc = get_form(row['AwayTeam'], row['Date'], df)
+
+    h_pts.append(hp)
+    h_gs.append(hg)
+    h_gc.append(hgc)
+
+    a_pts.append(ap)
+    a_gs.append(ag)
+    a_gc.append(agc)
+
+df['H_FormPts'] = h_pts
+df['H_FormGS'] = h_gs
+df['H_FormGC'] = h_gc
+
+df['A_FormPts'] = a_pts
+df['A_FormGS'] = a_gs
+df['A_FormGC'] = a_gc
+
+df.to_csv('match_features.csv', index=False)
+print("Head-to-Head Data pipeline complete. Output saved to match_features.csv")
