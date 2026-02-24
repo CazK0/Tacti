@@ -4,12 +4,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import joblib
 
-df = pd.read_csv('team_features.csv')
+df = pd.read_csv('match_features.csv')
 
-df['Venue_Code'] = df['Venue'].apply(lambda x: 1 if x == 'Home' else 0)
-df['Target_Win'] = df['Points'].apply(lambda x: 1 if x == 3 else 0)
+df['Target_Win'] = df['FTR'].apply(lambda x: 1 if x == 'H' else 0)
 
-features = ['Venue_Code', 'FormPoints', 'FormGoalsScored', 'FormGoalsConceded']
+features = ['H_FormPts', 'H_FormGS', 'H_FormGC', 'A_FormPts', 'A_FormGS', 'A_FormGC']
 X = df[features]
 y = df['Target_Win']
 
@@ -24,4 +23,3 @@ accuracy = accuracy_score(y_test, predictions)
 print(f"Model trained. Accuracy on unseen test data: {accuracy * 100:.2f}%")
 
 joblib.dump(model, 'cortex_model.pkl')
-print("Model saved to cortex_model.pkl")
