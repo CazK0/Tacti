@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cortex Predictor</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #ffffff; text-align: center; padding: 50px; margin: 0; }
+        .container { background: #1e1e1e; padding: 40px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h1 { color: #00e676; margin-top: 0; }
+        select, button { padding: 12px; margin: 15px; border-radius: 6px; border: none; font-size: 16px; outline: none; }
+        select { background: #333; color: white; cursor: pointer; }
+        button { background: #00e676; color: #121212; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #00c853; }
+        .result { margin-top: 30px; font-size: 22px; padding: 20px; background: #2a2a2a; border-radius: 8px; border-left: 5px solid #00e676; }
+        .error { color: #ff5252; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cortex AI</h1>
+        <form method="POST">
+            <select name="home_team" required>
+                <option value="" disabled selected>Select Home Team</option>
+                {% for team in teams %}
+                <option value="{{ team }}" {% if home_team == team %}selected{% endif %}>{{ team }}</option>
+                {% endfor %}
+            </select>
+
+            <span style="font-weight: bold; margin: 0 10px;"> VS </span>
+
+            <select name="away_team" required>
+                <option value="" disabled selected>Select Away Team</option>
+                {% for team in teams %}
+                <option value="{{ team }}" {% if away_team == team %}selected{% endif %}>{{ team }}</option>
+                {% endfor %}
+            </select>
+            <br>
+            <button type="submit">Predict Match</button>
+        </form>
+
+        {% if home_team == away_team and home_team is not none %}
+        <div class="error">
+            <p>Please select two different teams.</p>
+        </div>
+        {% elif prediction is not none %}
+        <div class="result">
+            <p><strong>{{ home_team }}</strong> Win Probability</p>
+            <h2 style="color: #00e676; font-size: 36px; margin: 10px 0 0 0;">{{ prediction }}%</h2>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
