@@ -1,6 +1,6 @@
 import pandas as pd
 
-url = "https://www.football-data.co.uk/mmz4281/2324/E0.csv"
+url = "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
 df = pd.read_csv(url)
 
 df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
@@ -33,7 +33,7 @@ def get_form(team, date, data):
             gs += row['FTAG']
             gc += row['FTHG']
 
-    return pts, gs / len(past_games), gc / len(past_games)
+        return pts, gs / len(past_games), gc / len(past_games)
 
 
 h_pts, h_gs, h_gc = [], [], []
