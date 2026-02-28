@@ -1,10 +1,21 @@
 import pandas as pd
 
-url = "https://www.football-data.co.uk/mmz4281/2526/E0.csv"
-df = pd.read_csv(url)
+seasons = ["2122", "2223", "2324", "2425", "2526"]
+dfs = []
 
-df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+for season in seasons:
+    url = f"https://www.football-data.co.uk/mmz4281/{season}/E0.csv"
+    try:
+        temp_df = pd.read_csv(url)
+        temp_df = temp_df[['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR']]
+        temp_df['Date'] = pd.to_datetime(temp_df['Date'], dayfirst=True)
+        dfs.append(temp_df)
+    except Exception as e:
+        print(f"Skipping {season}")
+
+df = pd.concat(dfs, ignore_index=True)
 df = df.sort_values(by='Date')
+df = df.dropna(subset=['FTR'])
 
 
 def get_form(team, date, data):
@@ -33,7 +44,7 @@ def get_form(team, date, data):
             gs += row['FTAG']
             gc += row['FTHG']
 
-        return pts, gs / len(past_games), gc / len(past_games)
+    return pts, gs / len(past_games), gc / len(past_games)
 
 
 h_pts, h_gs, h_gc = [], [], []
@@ -60,4 +71,3 @@ df['A_FormGS'] = a_gs
 df['A_FormGC'] = a_gc
 
 df.to_csv('match_features.csv', index=False)
-print("Head-to-Head Data pipeline complete. Output saved to match_features.csv")
