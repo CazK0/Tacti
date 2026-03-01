@@ -2,37 +2,42 @@ from flask import Flask, render_template, request
 import pandas as pd
 import joblib
 
-app = Flask(__name__)
-
+print("Loading AI model...")
 model = joblib.load('cortex_model.pkl')
+
+print("Loading data...")
 df = pd.read_csv('match_features.csv')
 
-recent_matches = df.tail(380)
-teams = sorted(set(recent_matches['HomeTeam'].unique()) | set(recent_matches['AwayTeam'].unique()))
+print("Extracting current teams...")
+teams = sorted(df['HomeTeam'].drop_duplicates(keep='last').tail(20).tolist())
+
+app = Flask(__name__)
 
 def get_latest_form(team, data):
-    past_games = data[(data['HomeTeam'] == team) | (data['AwayTeam'] == team)].tail(3)
+    past_games = data[(data['HomeTeam'] == team) | (data['AwayTeam'] == team)].tail(5)
     
-    if len(past_games) == 0:
+    if len(past_games) < 5:
         return 0, 0, 0
     
     pts = 0
     gs = 0
     gc = 0
+    weights = [0.10, 0.15, 0.20, 0.25, 0.30]
     
-    for _, row in past_games.iterrows():
+    for i, (_, row) in enumerate(past_games.iterrows()):
+        w = weights[i]
         if row['HomeTeam'] == team:
-            if row['FTR'] == 'H': pts += 3
-            elif row['FTR'] == 'D': pts += 1
-            gs += row['FTHG']
-            gc += row['FTAG']
+            if row['FTR'] == 'H': pts += 3 * w
+            elif row['FTR'] == 'D': pts += 1 * w
+            gs += row['FTHG'] * w
+            gc += row['FTAG'] * w
         else:
-            if row['FTR'] == 'A': pts += 3
-            elif row['FTR'] == 'D': pts += 1
-            gs += row['FTAG']
-            gc += row['FTHG']
+            if row['FTR'] == 'A': pts += 3 * w
+            elif row['FTR'] == 'D': pts += 1 * w
+            gs += row['FTAG'] * w
+            gc += row['FTHG'] * w
             
-    return pts, gs / len(past_games), gc / len(past_games)
+    return pts, gs, gc
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -61,4 +66,5 @@ def index():
     return render_template('index.html', teams=teams, home_prob=home_prob, draw_prob=draw_prob, away_prob=away_prob, home_team=home_team, away_team=away_team)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    print("Starting Flask server on port 5005...")
+    app.run(debug=True, port=5005)
