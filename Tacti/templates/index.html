@@ -5,14 +5,23 @@
     <title>Cortex Predictor</title>
     <style>
         body { font-family: sans-serif; background: #121212; color: #ffffff; text-align: center; padding: 50px; margin: 0; }
-        .container { background: #1e1e1e; padding: 40px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .container { background: #1e1e1e; padding: 40px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 800px; width: 100%; }
         h1 { color: #00e676; margin-top: 0; }
-        select, button { padding: 12px; margin: 15px; border-radius: 6px; border: none; font-size: 16px; outline: none; }
-        select { background: #333; color: white; cursor: pointer; }
-        button { background: #00e676; color: #121212; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        select, button { padding: 12px; margin: 15px 5px; border-radius: 6px; border: none; font-size: 16px; outline: none; }
+        select { background: #333; color: white; cursor: pointer; width: 40%; }
+        button { background: #00e676; color: #121212; cursor: pointer; font-weight: bold; transition: 0.3s; width: 85%; margin-top: 20px; }
         button:hover { background: #00c853; }
-        .result { margin-top: 30px; font-size: 22px; padding: 20px; background: #2a2a2a; border-radius: 8px; border-left: 5px solid #00e676; }
         .error { color: #ff5252; margin-top: 20px; }
+        .results-grid { display: flex; justify-content: space-between; margin-top: 30px; gap: 10px; }
+        .stat-box { background: #2a2a2a; padding: 20px; border-radius: 8px; flex: 1; text-align: center; }
+        .stat-box.home { border-bottom: 4px solid #00e676; }
+        .stat-box.draw { border-bottom: 4px solid #ffeb3b; }
+        .stat-box.away { border-bottom: 4px solid #2196f3; }
+        .stat-box h3 { margin: 0 0 10px 0; font-size: 16px; color: #aaa; }
+        .stat-box h2 { margin: 0; font-size: 28px; color: #fff; }
+        .details-grid { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
+        .detail-box { background: #1a1a1a; padding: 15px; border-radius: 8px; flex: 1; text-align: left; font-size: 14px; border: 1px solid #333; }
+        .detail-box span { color: #00e676; font-weight: bold; float: right; }
     </style>
 </head>
 <body>
@@ -20,16 +29,16 @@
         <h1>Cortex AI</h1>
         <form method="POST">
             <select name="home_team" required>
-                <option value="" disabled selected>Select Home Team</option>
+                <option value="" disabled selected>Home Team</option>
                 {% for team in teams %}
                 <option value="{{ team }}" {% if home_team == team %}selected{% endif %}>{{ team }}</option>
                 {% endfor %}
             </select>
-
-            <span style="font-weight: bold; margin: 0 10px;"> VS </span>
-
+            
+            <span style="font-weight: bold;">VS</span>
+            
             <select name="away_team" required>
-                <option value="" disabled selected>Select Away Team</option>
+                <option value="" disabled selected>Away Team</option>
                 {% for team in teams %}
                 <option value="{{ team }}" {% if away_team == team %}selected{% endif %}>{{ team }}</option>
                 {% endfor %}
@@ -42,10 +51,34 @@
         <div class="error">
             <p>Please select two different teams.</p>
         </div>
-        {% elif prediction is not none %}
-        <div class="result">
-            <p><strong>{{ home_team }}</strong> Win Probability</p>
-            <h2 style="color: #00e676; font-size: 36px; margin: 10px 0 0 0;">{{ prediction }}%</h2>
+        {% elif home_prob is not none %}
+        <div class="results-grid">
+            <div class="stat-box home">
+                <h3>{{ home_team }}</h3>
+                <h2>{{ home_prob }}%</h2>
+            </div>
+            <div class="stat-box draw">
+                <h3>Draw</h3>
+                <h2>{{ draw_prob }}%</h2>
+            </div>
+            <div class="stat-box away">
+                <h3>{{ away_team }}</h3>
+                <h2>{{ away_prob }}%</h2>
+            </div>
+        </div>
+
+        <div class="details-grid">
+            <div class="detail-box">
+                <p>Form Rating (EWMA): <span>{{ h_stats.pts }}</span></p>
+                <p>Attacking Threat: <span>{{ h_stats.gs }}</span></p>
+                <p>Defensive Frailty: <span>{{ h_stats.gc }}</span></p>
+            </div>
+            <div class="detail-box" style="visibility: hidden;"></div> 
+            <div class="detail-box">
+                <p>Form Rating (EWMA): <span style="color: #2196f3;">{{ a_stats.pts }}</span></p>
+                <p>Attacking Threat: <span style="color: #2196f3;">{{ a_stats.gs }}</span></p>
+                <p>Defensive Frailty: <span style="color: #2196f3;">{{ a_stats.gc }}</span></p>
+            </div>
         </div>
         {% endif %}
     </div>
