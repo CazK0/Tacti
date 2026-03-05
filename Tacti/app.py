@@ -46,6 +46,8 @@ def index():
     away_prob = None
     home_team = None
     away_team = None
+    h_stats = None
+    a_stats = None
 
     if request.method == 'POST':
         home_team = request.form.get('home_team')
@@ -62,8 +64,11 @@ def index():
             away_prob = round(probs[0] * 100, 1)
             draw_prob = round(probs[1] * 100, 1)
             home_prob = round(probs[2] * 100, 1)
+            
+            h_stats = {'pts': round(h_pts, 2), 'gs': round(h_gs, 2), 'gc': round(h_gc, 2)}
+            a_stats = {'pts': round(a_pts, 2), 'gs': round(a_gs, 2), 'gc': round(a_gc, 2)}
 
-    return render_template('index.html', teams=teams, home_prob=home_prob, draw_prob=draw_prob, away_prob=away_prob, home_team=home_team, away_team=away_team)
+    return render_template('index.html', teams=teams, home_prob=home_prob, draw_prob=draw_prob, away_prob=away_prob, home_team=home_team, away_team=away_team, h_stats=h_stats, a_stats=a_stats)
 
 if __name__ == '__main__':
     print("Starting Flask server on port 5005...")
